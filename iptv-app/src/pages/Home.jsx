@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useInView } from "react-intersection-observer";
 import { useLocation } from "react-router-dom";
 import { useChannels } from "../hooks/useChannels";
@@ -31,6 +31,95 @@ function Home() {
   const [visibleChannels, setVisibleChannels] = useState([]);
   const { ref: loadMoreRef, inView } = useInView({ threshold: 0.4 });
   const { ref: playerSentinelRef, inView: playerInView } = useInView({ threshold: 0, rootMargin: '-1px 0px 0px 0px' });
+  const [playerPosition, setPlayerPosition] = useState({ x: 24, y: 24 });
+  const [playerSize, setPlayerSize] = useState({ width: 900, height: 360 });
+  const [playerDragOffset, setPlayerDragOffset] = useState(null);
+  const [playerDragging, setPlayerDragging] = useState(false);
+  const [playerResizeOffset, setPlayerResizeOffset] = useState(null);
+  const [playerResizing, setPlayerResizing] = useState(false);
+  const dragHandleRef = useRef(null);
+  const asideRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setPlayerPosition({ x: 24, y: Math.max(24, window.innerHeight - 360) });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!playerDragging || !playerDragOffset) return;
+
+    const handlePointerMove = (event) => {
+      const maxX = Math.max(24, window.innerWidth - 920);
+      const maxY = Math.max(24, window.innerHeight - 320);
+      const nextX = Math.min(Math.max(24, event.clientX - playerDragOffset.x), maxX);
+      const nextY = Math.min(Math.max(24, event.clientY - playerDragOffset.y), maxY);
+      setPlayerPosition({ x: nextX, y: nextY });
+    };
+
+    const handlePointerUp = () => {
+      setPlayerDragging(false);
+      setPlayerDragOffset(null);
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, [playerDragging, playerDragOffset]);
+
+  useEffect(() => {
+    if (!playerResizing || !playerResizeOffset) return;
+
+    const handleResizeMove = (event) => {
+      const minWidth = 320;
+      const minHeight = 240;
+      const maxWidth = Math.max(420, window.innerWidth - 48);
+      const maxHeight = Math.max(280, window.innerHeight - 120);
+      const deltaX = event.clientX - playerResizeOffset.pointerX;
+      const deltaY = event.clientY - playerResizeOffset.pointerY;
+      const nextWidth = Math.min(Math.max(minWidth, playerResizeOffset.width + deltaX), maxWidth);
+      const nextHeight = Math.min(Math.max(minHeight, playerResizeOffset.height + deltaY), maxHeight);
+      setPlayerSize({ width: nextWidth, height: nextHeight });
+    };
+
+    const handleResizeUp = () => {
+      setPlayerResizing(false);
+      setPlayerResizeOffset(null);
+    };
+
+    window.addEventListener("pointermove", handleResizeMove);
+    window.addEventListener("pointerup", handleResizeUp);
+
+    return () => {
+      window.removeEventListener("pointermove", handleResizeMove);
+      window.removeEventListener("pointerup", handleResizeUp);
+    };
+  }, [playerResizing, playerResizeOffset]);
+
+  const handlePlayerDragStart = (event) => {
+    if (!playerPinned || !asideRef.current) return;
+    const rect = asideRef.current.getBoundingClientRect();
+    setPlayerDragging(true);
+    setPlayerDragOffset({ x: event.clientX - rect.left, y: event.clientY - rect.top });
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handlePlayerResizeStart = (event) => {
+    if (!playerPinned || !asideRef.current) return;
+    const rect = asideRef.current.getBoundingClientRect();
+    setPlayerResizing(true);
+    setPlayerResizeOffset({
+      width: rect.width,
+      height: rect.height,
+      pointerX: event.clientX,
+      pointerY: event.clientY,
+    });
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
 
   useEffect(() => {
     if (!selectedChannel && channels.length > 0) {
@@ -82,7 +171,7 @@ function Home() {
   const playerPinned = selectedChannel && !playerInView;
   const selectedChannelFailed = selectedChannel && failedChannels.has(selectedChannel.id);
   const hasMore = visibleChannels.length < filteredChannels.length;
-  const bottomSpacerClass = playerPinned ? "h-48 md:h-56" : "h-0";
+  const bottomSpacerClass = playerPinned ? "h-64 md:h-72" : "h-0";
 
   const getNextChannel = (current, candidates) => {
     if (!current) return null;
@@ -196,16 +285,43 @@ function Home() {
         <div className="relative">
           <div ref={playerSentinelRef} className="absolute inset-x-0 top-0 h-px" />
           <aside
-            className={`rounded-[2rem] border border-white/10 bg-slate-950/80 p-6 shadow-2xl shadow-black/40 transition-transform duration-300 ${
+            ref={asideRef}
+            className={`rounded-[2rem] border border-white/10 bg-slate-950/80 p-6 shadow-2xl shadow-black/40 transition-all duration-300 ${
               playerPinned
-                ? "fixed inset-x-4 bottom-4 z-50 max-w-5xl rounded-[2rem] border-white/20 bg-slate-950/95 backdrop-blur-xl"
+                ? "fixed z-50 border-white/20 bg-slate-950/95 backdrop-blur-xl shadow-2xl max-h-[calc(100vh-6rem)] overflow-hidden"
                 : "sticky top-24"
             }`}
+            style={
+              playerPinned
+                ? {
+                    left: playerPosition.x,
+                    top: playerPosition.y,
+                    width: `${playerSize.width}px`,
+                  }
+                : undefined
+            }
           >
-            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between text-slate-300">
-              <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-red-400">Now playing</p>
-                <p className="text-lg text-white">{selectedChannel?.name || "Select a channel"}</p>
+            <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between text-slate-300">
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  ref={dragHandleRef}
+                  type="button"
+                  onPointerDown={handlePlayerDragStart}
+                  className="cursor-grab rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs uppercase tracking-[0.3em] text-slate-300 transition hover:border-red-400 hover:text-white"
+                >
+                  Drag
+                </button>
+                <button
+                  type="button"
+                  onPointerDown={handlePlayerResizeStart}
+                  className="cursor-nwse-resize rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs uppercase tracking-[0.3em] text-slate-300 transition hover:border-red-400 hover:text-white"
+                >
+                  Resize
+                </button>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.3em] text-red-400">Now playing</p>
+                  <p className="text-lg font-semibold text-white">{selectedChannel?.name || "Select a channel"}</p>
+                </div>
               </div>
               <div className="flex flex-wrap gap-3">
                 <button
@@ -235,7 +351,12 @@ function Home() {
               </div>
             </div>
             {selectedChannel && !selectedChannelFailed ? (
-              <VideoPlayer url={selectedChannel.stream} onError={handlePlaybackError} compact={playerPinned} />
+              <VideoPlayer
+                url={selectedChannel.stream}
+                onError={handlePlaybackError}
+                compact={playerPinned}
+                customHeight={playerPinned ? playerSize.height : undefined}
+              />
             ) : (
               <div className="rounded-3xl border border-red-500/20 bg-red-500/10 p-6 text-sm text-red-200">
                 <p className="font-semibold text-white">Unable to play current channel.</p>

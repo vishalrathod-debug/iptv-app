@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
 
-function VideoPlayer({ url, onError, compact = false }) {
+function VideoPlayer({ url, onError, compact = false, customHeight }) {
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
   const onErrorRef = useRef(onError);
@@ -162,7 +162,8 @@ function VideoPlayer({ url, onError, compact = false }) {
         ref={videoRef}
         controls
         autoPlay
-        className={`${compact ? "h-64" : "h-[380px]"} w-full rounded-3xl bg-black object-cover`}
+        style={customHeight ? { height: `${customHeight}px` } : undefined}
+        className={`${compact ? "h-64 md:h-72 lg:h-80 max-h-[45vh]" : "h-[380px] md:h-[420px] lg:h-[500px] max-h-[65vh]"} w-full rounded-3xl bg-black object-cover`}
       />
     </div>
   );
