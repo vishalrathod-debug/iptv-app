@@ -1,9 +1,11 @@
 import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useChannels } from "../hooks/useChannels";
 import CategoryCard from "../components/CategoryCard";
 
 function Categories() {
   const { channels, loading, error } = useChannels();
+  const navigate = useNavigate();
 
   const categories = useMemo(() => {
     const map = new Map();
@@ -17,6 +19,13 @@ function Categories() {
       .map(([category, count]) => ({ category, count }));
   }, [channels]);
 
+  const handleCategorySelect = (category) => {
+    const params = new URLSearchParams();
+    params.set("search", category);
+    params.set("source", "app");
+    navigate({ pathname: "/", search: params.toString() });
+  };
+
   return (
     <div className="space-y-8">
       <header className="rounded-[2rem] border border-white/10 bg-white/5 p-8">
@@ -26,7 +35,12 @@ function Categories() {
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {categories.map((item) => (
-          <CategoryCard key={item.category} category={item.category} count={item.count} />
+          <CategoryCard
+            key={item.category}
+            category={item.category}
+            count={item.count}
+            onSelect={handleCategorySelect}
+          />
         ))}
       </div>
 

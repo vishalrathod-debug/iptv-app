@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Menu, Search, Tv } from "lucide-react";
+import { Menu, Tv } from "lucide-react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
+import SearchBar from "../components/SearchBar";
 
 const navItems = [
   { to: "/", label: "Home" },
@@ -20,8 +21,9 @@ function Navbar() {
     const params = new URLSearchParams();
     if (search.trim()) {
       params.set("search", search.trim());
+      params.set("source", "app");
     }
-    navigate({ pathname: "/", search: params.toString() }, { state: { fromSearch: true } });
+    navigate({ pathname: "/", search: params.toString() });
     setOpen(false);
   };
 
@@ -49,29 +51,25 @@ function Navbar() {
 
         <div className={`overflow-hidden transition-all duration-300 md:block ${open ? "max-h-80" : "max-h-0 md:max-h-full"}`}>
           <div className="flex flex-col gap-3 rounded-3xl border border-white/10 bg-white/5 p-4 md:flex-row md:items-center md:gap-5 md:border-none md:bg-transparent md:p-0">
-            <form onSubmit={handleSearchSubmit} className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
-              <label className="group flex w-full items-center gap-2 rounded-full border border-white/10 bg-black/70 px-4 py-2 text-slate-300 focus-within:border-red-500 md:w-auto">
-                <Search size={16} />
-                <input
-                  type="search"
+              <form onSubmit={handleSearchSubmit} className="flex w-full flex-col gap-3 md:flex-row md:items-center md:gap-3">
+              <div className="w-full md:max-w-xl">
+                <SearchBar
                   value={search}
-                  onChange={(event) => setSearch(event.target.value)}
+                  onChange={setSearch}
+                  onClear={() => setSearch("")}
                   placeholder="Search channels, themes, or countries here"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  spellCheck="false"
-                  className="w-full bg-transparent text-white outline-none placeholder:text-slate-500"
                 />
-              </label>
-            <button
-              type="submit"
-              className="rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-black transition hover:bg-red-600"
-            >
-              Search
-            </button>
-          </form>
+              </div>
+              <button
+                type="submit"
+                className="rounded-full bg-red-500 px-5 py-3 text-sm font-semibold text-black transition hover:bg-red-600"
+              >
+                Search
+              </button>
+            </form>
 
-            <nav className="grid gap-3 md:grid-flow-col md:auto-cols-max md:items-center">
+            <div className="flex flex-wrap gap-3 justify-between md:justify-end">
+              <nav className="grid gap-3 md:grid-flow-col md:auto-cols-max md:items-center">
               {navItems.map((item) => (
                 <NavLink
                   key={item.to}
@@ -87,6 +85,7 @@ function Navbar() {
                 </NavLink>
               ))}
             </nav>
+            </div>
           </div>
         </div>
       </div>

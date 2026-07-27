@@ -39,13 +39,14 @@ function Home() {
   }, [channels, selectedChannel]);
 
   useEffect(() => {
-    if (!location.state?.fromSearch) return;
     const params = new URLSearchParams(location.search);
+    if (params.get("source") !== "app") return;
     const currentSearch = params.get("search") || "";
     if (currentSearch.trim()) {
       setQuery(currentSearch);
+      setSelectedCategory("");
     }
-  }, [location.search, location.state]);
+  }, [location.search]);
 
   const filteredChannels = useMemo(() => {
     const search = query.trim().toLowerCase();
@@ -195,9 +196,9 @@ function Home() {
         <div className="relative">
           <div ref={playerSentinelRef} className="absolute inset-x-0 top-0 h-px" />
           <aside
-            className={`self-start rounded-[2rem] border border-white/10 bg-slate-950/80 p-6 shadow-xl shadow-black/30 transition-all duration-300 ${
+            className={`rounded-[2rem] border border-white/10 bg-slate-950/80 p-6 shadow-2xl shadow-black/40 transition-transform duration-300 ${
               playerPinned
-                ? "fixed left-1/2 bottom-4 z-50 w-[calc(100%-2rem)] max-w-5xl -translate-x-1/2 border-white/20 bg-slate-950/95 backdrop-blur-xl"
+                ? "fixed inset-x-4 bottom-4 z-50 max-w-5xl rounded-[2rem] border-white/20 bg-slate-950/95 backdrop-blur-xl"
                 : "sticky top-24"
             }`}
           >

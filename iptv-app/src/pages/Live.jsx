@@ -96,21 +96,21 @@ function Live() {
 
   return (
     <div className="space-y-8">
-      <section className="rounded-[2rem] border border-white/10 bg-white/5 p-8">
+      <section className="rounded-[2rem] border border-white/10 bg-white/5 p-8 shadow-2xl shadow-black/20">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-3xl font-semibold text-white">Live channels</h1>
-            <p className="mt-2 text-slate-400">Tune in to live television channels from around the world.</p>
+            <p className="mt-2 text-slate-300">Tune in to live television channels from around the world.</p>
           </div>
-          <div className="rounded-3xl border border-white/10 bg-slate-950/80 p-5">
+          <div className="rounded-3xl border border-white/10 bg-slate-950/80 p-5 shadow-inner shadow-black/20">
             <p className="text-sm uppercase tracking-[0.3em] text-red-400">Now playing</p>
             <p className="mt-2 text-lg text-white">{selectedChannel?.name || "Pick a stream"}</p>
           </div>
         </div>
         <div className="mt-8 space-y-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="rounded-3xl border border-white/10 bg-slate-950/80 p-5">
-              <p className="text-sm uppercase tracking-[0.3em] text-red-400">Now playing</p>
+            <div className="rounded-3xl border border-white/10 bg-slate-950/80 p-5 shadow-inner shadow-black/20">
+              <p className="text-sm uppercase tracking-[0.3em] text-red-400">Current stream</p>
               <p className="mt-2 text-lg text-white">{selectedChannel?.name || "Pick a stream"}</p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -157,8 +157,8 @@ function Live() {
             key={channel.id}
             channel={channel}
             onPlay={setSelectedChannel}
-            onToggleFavorite={() => null}
-            isFavorite={false}
+            onToggleFavorite={handleToggleFavorite}
+            isFavorite={favorites.some((item) => item.id === channel.id)}
           />
         ))}
       </div>

@@ -1,9 +1,11 @@
 import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useChannels } from "../hooks/useChannels";
 import CountryCard from "../components/CountryCard";
 
 function Countries() {
   const { channels, loading, error } = useChannels();
+  const navigate = useNavigate();
 
   const countries = useMemo(() => {
     const map = new Map();
@@ -17,6 +19,13 @@ function Countries() {
       .map(([country, count]) => ({ country, count }));
   }, [channels]);
 
+  const handleCountrySelect = (country) => {
+    const params = new URLSearchParams();
+    params.set("search", country);
+    params.set("source", "app");
+    navigate({ pathname: "/", search: params.toString() });
+  };
+
   return (
     <div className="space-y-8">
       <header className="rounded-[2rem] border border-white/10 bg-white/5 p-8">
@@ -26,7 +35,12 @@ function Countries() {
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {countries.map((item) => (
-          <CountryCard key={item.country} country={item.country} count={item.count} />
+          <CountryCard
+            key={item.country}
+            country={item.country}
+            count={item.count}
+            onSelect={handleCountrySelect}
+          />
         ))}
       </div>
 
